@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, url_for
 from helpers.epaper_calendar import draw_calendar
 from helpers.Image import epd, h_black_image, h_red_image
 from datetime import date
@@ -20,11 +20,7 @@ def handleBtnPress(btn):
 		19: "4"
 	}
 	msg = switcher.get(pinNum, "Error")
-
-	gc = gspread.service_account(filename='./client_secret.json')
-	sheet = gc.open('daily_check')
-	sheet.sheet1.append_row([date.today().isoformat(), msg])
-	print_to_display()
+	update_gsheet(msg)
 
 btn1.when_pressed = handleBtnPress
 btn2.when_pressed = handleBtnPress
@@ -36,9 +32,26 @@ def print_to_display():
 	draw_calendar(epd.height, epd.width)
 	epd.display(epd.getbuffer(h_black_image), epd.getbuffer(h_red_image))
 
+def update_gsheet(msg):
+	gc = gspread.service_account(filename='./client_secret.json')
+	sheet = gc.open('daily_check')
+	sheet.sheet1.append_row([date.today().isoformat(), msg])
+	print_to_display()
+
 app = Flask(__name__)
 
 @app.route('/')
 def refresh_screen():
 	print_to_display()
 	return 'Ok'
+
+@app.route('/shortcut/<number>', methods=['POST'])
+def shortcut_submission(number):
+	if (int(number) < 1) or (int(number) > 4):
+		return 'Not submitted'
+	update_gsheet(str(number))
+	return 'Ok'
+
+with app.test_request_context():
+	print(url_for('refresh_screen'))
+	print(url_for('shortcut_submission', number='4'))
