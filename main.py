@@ -1,4 +1,4 @@
-from flask import Flask, url_for
+from flask import Flask, url_for, request
 from helpers.epaper_calendar import draw_calendar
 from helpers.Image import epd, h_black_image, h_red_image
 from datetime import date
@@ -32,10 +32,10 @@ def print_to_display():
 	draw_calendar(epd.height, epd.width)
 	epd.display(epd.getbuffer(h_black_image), epd.getbuffer(h_red_image))
 
-def update_gsheet(msg):
+def update_gsheet(msg, entry=''):
 	gc = gspread.service_account(filename='./client_secret.json')
 	sheet = gc.open('daily_check')
-	sheet.sheet1.append_row([date.today().isoformat(), msg])
+	sheet.sheet1.append_row([date.today().isoformat(), msg, entry])
 	print_to_display()
 
 app = Flask(__name__)
@@ -49,7 +49,7 @@ def refresh_screen():
 def shortcut_submission(number):
 	if (int(number) < 1) or (int(number) > 4):
 		return 'Not submitted'
-	update_gsheet(str(number))
+	update_gsheet(str(number), request.get_json()['entry'])
 	return 'Ok'
 
 with app.test_request_context():
