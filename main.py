@@ -35,7 +35,7 @@ def print_to_display():
 def update_gsheet(msg, entry=''):
 	gc = gspread.service_account(filename='./client_secret.json')
 	sheet = gc.open('daily_check')
-	sheet.sheet1.append_row([date.today().isoformat(), msg, entry])
+	sheet.sheet1.append_row([date.today().isoformat(), int(msg), entry])
 	print_to_display()
 
 app = Flask(__name__)
